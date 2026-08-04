@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Davomat — Keldim / Ketdim</title>
+<style>
+  :root{
+    --ink:#1c2b24;
+    --paper:#f5f2ea;
+    --accent:#2f6f4f;
+    --accent-dark:#1e4c35;
+    --danger:#a13b2f;
+    --line:#d8d2c2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:24px 16px;
+  }
+  .card{
+    width:100%;
+    max-width:420px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:28px 24px;
+    box-shadow:0 2px 10px rgba(28,43,36,0.06);
+  }
+  h1{
+    font-size:1.3rem;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    font-size:0.85rem;
+    color:#6b6558;
+    margin-bottom:22px;
+  }
+  label{
+    display:block;
+    font-size:0.8rem;
+    font-weight:600;
+    margin-bottom:6px;
+    color:#4a4438;
+  }
+  input[type=text], input[type=date]{
+    width:100%;
+    padding:12px 14px;
+    font-size:1rem;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    background:#fbfaf6;
+    letter-spacing:0.02em;
+  }
+  input[type=text]:focus, input[type=date]:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  .employee-preview{
+    margin-top:10px;
+    font-size:0.9rem;
+    min-height:20px;
+  }
+  .employee-preview.ok{ color:var(--accent-dark); font-weight:600; }
+  .employee-preview.bad{ color:var(--danger); }
+
+  .btn-row{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+  }
+  button.main{
+    flex:1;
+    padding:15px;
+    font-size:1.02rem;
+    font-weight:700;
+    color:#fff;
+    background:var(--accent);
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.05s ease;
+  }
+  button.main.checkout{
+    background:#8a5a1e;
+  }
+  button.main:disabled{
+    background:#b9b3a2;
+    cursor:not-allowed;
+  }
+  button.main:active:not(:disabled){ transform:scale(0.98); }
+
+  .status{
+    margin-top:16px;
+    padding:14px;
+    border-radius:10px;
+    font-size:0.92rem;
+    line-height:1.4;
+    display:none;
+  }
+  .status.show{ display:block; }
+  .status.success{ background:#e7f2ea; color:var(--accent-dark); border:1px solid #bcdcc7; }
+  .status.error{ background:#f7e9e6; color:var(--danger); border:1px solid #e6c3ba; }
+  .status.loading{ background:#f0eee5; color:#6b6558; border:1px solid var(--line); }
+  .status.late{ background:#fbf1e0; color:#8a5a1e; border:1px solid #eeddb8; }
+
+  .tag{
+    font-size:0.72rem;
+    font-weight:600;
+    padding:2px 6px;
+    border-radius:5px;
+    margin-left:6px;
+    display:inline-block;
+  }
+  .tag.late{ color:var(--danger); background:#f7e9e6; }
+  .tag.early{ color:#8a5a1e; background:#fbf1e0; }
+
+  .today{
+    margin-top:26px;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+  .today h2{
+    font-size:0.85rem;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:#6b6558;
+    margin:0 0 10px;
+  }
+  .attend-row{
+    display:flex;
+    flex-direction:column;
+    font-size:0.88rem;
+    padding:8px 0;
+    border-bottom:1px solid #eee8da;
+    gap:2px;
+  }
+  .attend-row:last-child{ border-bottom:none; }
+  .attend-top{
+    display:flex;
+    justify-content:space-between;
+  }
+  .attend-name{ font-weight:600; }
+  .attend-time{ color:#6b6558; }
+  .attend-checkout{ font-size:0.8rem; color:#948e7e; }
+  .empty-note{ font-size:0.85rem; color:#948e7e; }
+
+  .admin-toggle{
+    margin-top:22px;
+    font-size:0.8rem;
+    color:#948e7e;
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+  }
+  .admin-toggle:hover{ color:var(--accent-dark); }
+  .admin-panel{
+    display:none;
+    margin-top:12px;
+    padding:14px;
+    background:#f7f5ee;
+    border:1px dashed var(--line);
+    border-radius:10px;
+  }
+  .admin-panel.show{ display:block; }
+  .admin-current{
+    font-size:0.85rem;
+    margin-bottom:10px;
+    color:#4a4438;
+  }
+  .admin-section{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .admin-section-title{
+    font-size:0.78rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:#4a4438;
+    margin-bottom:10px;
+  }
+  .time-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+    font-size:0.88rem;
+  }
+  .time-row label{
+    flex:0 0 110px;
+    margin-bottom:0;
+    font-weight:600;
+  }
+  .time-row select{
+    padding:8px 6px;
+    border:1.5px solid var(--line);
+    border-radius:7px;
+    background:#fff;
+    font-size:0.92rem;
+  }
+  button.secondary{
+    width:100%;
+    padding:11px;
+    font-size:0.92rem;
+    font-weight:600;
+    color:var(--accent-dark);
+    background:#fff;
+    border:1.5px solid var(--accent);
+    border-radius:9px;
+    cursor:pointer;
+  }
+  button.secondary:active{ transform:scale(0.98); }
+  .admin-hint{
+    margin-top:8px;
+    font-size:0.78rem;
+    color:#948e7e;
+    line-height:1.4;
+  }
+
+  .admin-lock{
+    display:none;
+    margin-top:12px;
+    gap:8px;
+  }
+  .admin-lock.show{ display:flex; flex-wrap:wrap; }
+  .admin-lock input[type=text]{
+    flex:1;
+    padding:10px 12px;
+    font-size:0.92rem;
+  }
+  .admin-lock button.secondary{
+    width:auto;
+    padding:10px 16px;
+    white-space:nowrap;
+  }
+  .admin-lock-error{
+    width:100%;
+    font-size:0.8rem;
+    color:var(--danger);
+    margin-top:6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Davomat — Keldim / Ketdim</h1>
+  <div class="sub">Kodingizni kiriting. Ishga kelganda "Keldim", ketayotganda "Ketdim" tugmasini bosing.</div>
+
+  <label for="code">Xodim kodi</label>
+  <input type="text" id="code" placeholder="masalan: dr77" autocomplete="off">
+  <div class="employee-preview" id="preview"></div>
+
+  <div class="btn-row">
+    <button class="main" id="checkinBtn" disabled>Keldim</button>
+    <button class="main checkout" id="checkoutBtn" disabled>Ketdim</button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="today">
+    <h2>Bugun kelganlar</h2>
+    <div id="todayList"><div class="empty-note">Hali hech kim belgilanmagan</div></div>
+  </div>
+
+  <div class="admin-toggle" id="adminToggle">⚙ Admin sozlamalari</div>
+
+  <div class="admin-lock" id="adminLock">
+    <input type="text" id="adminPassword" placeholder="Parolni kiriting" autocomplete="off">
+    <button class="secondary" id="adminUnlockBtn">Kirish</button>
+    <div class="admin-lock-error" id="adminLockError"></div>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-current" id="adminCurrent">Hozircha manzil o'rnatilmagan (standart qiymat ishlatilyapti).</div>
+    <button class="secondary" id="setLocationBtn">📍 Hozirgi joylashuvni ishxona sifatida saqlash</button>
+    <div class="admin-hint">Bu tugmani ishxonaning o'zida turib bosing. Shundan keyin xodimlar shu nuqtadan 100 m radiusda "Keldim" tugmasini bosa oladi.</div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">Ish vaqtlari</div>
+      <div class="time-row">
+        <label>Ish boshlanadi</label>
+        <select id="startHour"></select> :
+        <select id="startMinute"></select>
+      </div>
+      <div class="time-row">
+        <label>Ish tugaydi</label>
+        <select id="endHour"></select> :
+        <select id="endMinute"></select>
+      </div>
+      <button class="secondary" id="saveHoursBtn">Vaqtlarni saqlash</button>
+      <div class="admin-hint">Shu vaqtdan kech kelganlar "kechikdi", shu vaqtdan oldin ketganlar "erta ketdi" deb belgilanadi.</div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">Excel hisobot</div>
+      <label for="reportDate">Sana</label>
+      <input type="date" id="reportDate">
+      <button class="secondary" id="exportBtn" style="margin-top:10px;">📊 Excel hisobotni yuklab olish</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+
+// ====== FIREBASE SOZLAMALARI ======
+const firebaseConfig = {
+  apiKey: "AIzaSyBHo8q9t28Y_JcLt6fTZ1ddP5G3ueHP2DE",
+  authDomain: "davomat-aad40.firebaseapp.com",
+  projectId: "davomat-aad40",
+  storageBucket: "davomat-aad40.firebasestorage.app",
+  messagingSenderId: "207560164681",
+  appId: "1:207560164681:web:999a0f2e08c957efeac698"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ====== SOZLAMALAR ======
+
+let WORKPLACE = {
+  lat: 41.311081,
+  lng: 69.240562,
+  name: "Ishxona"
+};
+const RADIUS_METERS = 100;
+
+// Ish boshlanish/tugash vaqti — endi admin panelidan o'zgartiriladi va
+// Firebase'da saqlanadi (hamma xodimlar uchun umumiy). Standart qiymatlar:
+let WORK_START_HOUR = 8;
+let WORK_START_MINUTE = 15;
+let WORK_END_HOUR = 17;
+let WORK_END_MINUTE = 0;
+
+// Xodimlar ro'yxati: kod -> ism
+// 250 nafar xodim uchun shu formatda to'ldiring: "kod": "Familiya Ism"
+const EMPLOYEES = {
+  "dr77": "Dadabayev Ravshan",
+  "ka12": "Karimov Aziz",
+  "yn05": "Yusupova Nilufar",
+  "sb31": "Sattorov Bekzod"
+  // ... qolgan 246 ta xodimni shu yerga qo'shing
+};
+
+// ====== ASOSIY LOGIKA ======
+
+const codeInput = document.getElementById('code');
+const preview = document.getElementById('preview');
+const checkinBtn = document.getElementById('checkinBtn');
+const checkoutBtn = document.getElementById('checkoutBtn');
+const statusEl = document.getElementById('status');
+const todayList = document.getElementById('todayList');
+
+function todayKey(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function haversineMeters(lat1, lon1, lat2, lon2){
+  const R = 6371000;
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2-lat1);
+  const dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+codeInput.addEventListener('input', () => {
+  const code = codeInput.value.trim().toLowerCase();
+  if (!code){
+    preview.textContent = '';
+    preview.className = 'employee-preview';
+    checkinBtn.disabled = true;
+    checkoutBtn.disabled = true;
+    return;
+  }
+  const name = EMPLOYEES[code];
+  if (name){
+    preview.textContent = `✓ ${name}`;
+    preview.className = 'employee-preview ok';
+    checkinBtn.disabled = false;
+    checkoutBtn.disabled = false;
+  } else {
+    preview.textContent = 'Bunday kod topilmadi';
+    preview.className = 'employee-preview bad';
+    checkinBtn.disabled = true;
+    checkoutBtn.disabled = true;
+  }
+});
+
+function showStatus(type, html){
+  statusEl.className = `status show ${type}`;
+  statusEl.innerHTML = html;
+}
+
+async function loadTodayList(){
+  try{
+    const q = query(collection(db, "attendance"), where("date", "==", todayKey()));
+    const snap = await getDocs(q);
+    if (snap.empty){
+      todayList.innerHTML = '<div class="empty-note">Hali hech kim belgilanmagan</div>';
+      return;
+    }
+    const rows = [];
+    snap.forEach(d => rows.push(d.data()));
+    rows.sort((a,b) => (a.time||'').localeCompare(b.time||''));
+    todayList.innerHTML = rows.map(r => {
+      const lateTag = r.late ? ` <span class="tag late">kechikdi ${r.minutesLate} daq</span>` : '';
+      const earlyTag = r.earlyLeave ? ` <span class="tag early">erta ketdi ${r.minutesEarly} daq</span>` : '';
+      const checkoutLine = r.checkoutTime
+        ? `<div class="attend-checkout">Ketdi: ${r.checkoutTime}${earlyTag}</div>`
+        : '';
+      return `<div class="attend-row">
+        <div class="attend-top"><span class="attend-name">${r.name}${lateTag}</span><span class="attend-time">${r.time || '-'}</span></div>
+        ${checkoutLine}
+      </div>`;
+    }).join('');
+  }catch(e){
+    todayList.innerHTML = '<div class="empty-note">Ro\'yxatni yuklab bo\'lmadi</div>';
+  }
+}
+
+function getLocation(){
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation){
+      reject({ code: -1 });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000 });
+  });
+}
+
+function locationErrorMessage(err){
+  if (err.code === 1) return 'Joylashuvga ruxsat berilmadi. Brauzer sozlamalaridan ruxsat bering.';
+  if (err.code === -1) return 'Qurilmangiz joylashuvni aniqlay olmaydi.';
+  return 'Joylashuvni aniqlab bo\'lmadi.';
+}
+
+// ====== KELDIM ======
+checkinBtn.addEventListener('click', async () => {
+  const code = codeInput.value.trim().toLowerCase();
+  const name = EMPLOYEES[code];
+  if (!name) return;
+
+  checkinBtn.disabled = true;
+  showStatus('loading', 'Joylashuv aniqlanmoqda...');
+
+  let pos;
+  try{
+    pos = await getLocation();
+  }catch(err){
+    showStatus('error', locationErrorMessage(err));
+    checkinBtn.disabled = false;
+    return;
+  }
+
+  const { latitude, longitude } = pos.coords;
+  const dist = haversineMeters(latitude, longitude, WORKPLACE.lat, WORKPLACE.lng);
+
+  if (dist > RADIUS_METERS){
+    showStatus('error', `Siz ${WORKPLACE.name}dan ${Math.round(dist)} metr uzoqdasiz. Davomat faqat ${RADIUS_METERS} m radiusda belgilanadi.`);
+    checkinBtn.disabled = false;
+    return;
+  }
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'});
+  const dateKey = todayKey();
+
+  const startMinutesTotal = WORK_START_HOUR * 60 + WORK_START_MINUTE;
+  const nowMinutesTotal = now.getHours() * 60 + now.getMinutes();
+  const minutesLate = nowMinutesTotal - startMinutesTotal;
+  const isLate = minutesLate > 0;
+
+  const record = {
+    name, code, time: timeStr, distance: Math.round(dist), date: dateKey,
+    late: isLate, minutesLate: isLate ? minutesLate : 0
+  };
+
+  try{
+    await setDoc(doc(db, "attendance", `${dateKey}_${code}`), record, { merge: true });
+  }catch(e){
+    showStatus('error', 'Saqlashda xatolik yuz berdi. Internetni tekshiring.');
+    checkinBtn.disabled = false;
+    return;
+  }
+
+  if (isLate){
+    showStatus('late', `⚠ <b>${name}</b> kelishi belgilandi (${timeStr}).<br>${minutesLate} daqiqa kechikdi.`);
+  } else {
+    showStatus('success', `✓ <b>${name}</b> kelishi belgilandi (${timeStr}).<br>Masofa: ${Math.round(dist)} m`);
+  }
+  await loadTodayList();
+  checkinBtn.disabled = false;
+});
+
+// ====== KETDIM ======
+checkoutBtn.addEventListener('click', async () => {
+  const code = codeInput.value.trim().toLowerCase();
+  const name = EMPLOYEES[code];
+  if (!name) return;
+
+  checkoutBtn.disabled = true;
+  showStatus('loading', 'Joylashuv aniqlanmoqda...');
+
+  let pos;
+  try{
+    pos = await getLocation();
+  }catch(err){
+    showStatus('error', locationErrorMessage(err));
+    checkoutBtn.disabled = false;
+    return;
+  }
+
+  const { latitude, longitude } = pos.coords;
+  const dist = haversineMeters(latitude, longitude, WORKPLACE.lat, WORKPLACE.lng);
+
+  if (dist > RADIUS_METERS){
+    showStatus('error', `Siz ${WORKPLACE.name}dan ${Math.round(dist)} metr uzoqdasiz. Ketish faqat ${RADIUS_METERS} m radiusda belgilanadi.`);
+    checkoutBtn.disabled = false;
+    return;
+  }
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'});
+  const dateKey = todayKey();
+
+  const endMinutesTotal = WORK_END_HOUR * 60 + WORK_END_MINUTE;
+  const nowMinutesTotal = now.getHours() * 60 + now.getMinutes();
+  const minutesEarly = endMinutesTotal - nowMinutesTotal;
+  const isEarly = minutesEarly > 0;
+
+  const record = {
+    name, code, date: dateKey,
+    checkoutTime: timeStr,
+    earlyLeave: isEarly, minutesEarly: isEarly ? minutesEarly : 0
+  };
+
+  try{
+    await setDoc(doc(db, "attendance", `${dateKey}_${code}`), record, { merge: true });
+  }catch(e){
+    showStatus('error', 'Saqlashda xatolik yuz berdi. Internetni tekshiring.');
+    checkoutBtn.disabled = false;
+    return;
+  }
+
+  if (isEarly){
+    showStatus('late', `⚠ <b>${name}</b> ketishi belgilandi (${timeStr}).<br>${minutesEarly} daqiqa erta ketdi.`);
+  } else {
+    showStatus('success', `✓ <b>${name}</b> ketishi belgilandi (${timeStr}).`);
+  }
+  await loadTodayList();
+  checkoutBtn.disabled = false;
+});
+
+// ====== ADMIN PAROL HIMOYASI ======
+// Buni o'zingiz xohlagan parolga almashtiring
+const ADMIN_PASSWORD = "R_993276013ser";
+
+const adminToggle = document.getElementById('adminToggle');
+const adminLock = document.getElementById('adminLock');
+const adminPanel = document.getElementById('adminPanel');
+const adminPasswordInput = document.getElementById('adminPassword');
+const adminUnlockBtn = document.getElementById('adminUnlockBtn');
+const adminLockError = document.getElementById('adminLockError');
+
+let adminUnlocked = sessionStorage.getItem('adminUnlocked') === 'yes';
+
+adminToggle.addEventListener('click', () => {
+  if (adminUnlocked){
+    adminPanel.classList.toggle('show');
+  } else {
+    adminLock.classList.toggle('show');
+    if (adminLock.classList.contains('show')) adminPasswordInput.focus();
+  }
+});
+
+function tryUnlock(){
+  if (adminPasswordInput.value === ADMIN_PASSWORD){
+    adminUnlocked = true;
+    sessionStorage.setItem('adminUnlocked', 'yes');
+    adminLock.classList.remove('show');
+    adminPanel.classList.add('show');
+    adminPasswordInput.value = '';
+    adminLockError.textContent = '';
+  } else {
+    adminLockError.textContent = 'Parol noto\'g\'ri.';
+    adminPasswordInput.value = '';
+  }
+}
+
+adminUnlockBtn.addEventListener('click', tryUnlock);
+adminPasswordInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') tryUnlock();
+});
+
+// ====== ISHXONA MANZILINI SOZLASH ======
+async function loadWorkplaceLocation(){
+  try{
+    const snap = await getDoc(doc(db, "settings", "workplace-location"));
+    if (snap.exists()){
+      const saved = snap.data();
+      WORKPLACE = { lat: saved.lat, lng: saved.lng, name: "Ishxona" };
+      document.getElementById('adminCurrent').textContent =
+        `Joriy manzil: ${saved.lat.toFixed(6)}, ${saved.lng.toFixed(6)} (${saved.savedAt} da saqlangan)`;
+    }
+  }catch(e){
+    // hali saqlanmagan — standart qiymat ishlatiladi
+  }
+}
+
+document.getElementById('setLocationBtn').addEventListener('click', () => {
+  const setBtn = document.getElementById('setLocationBtn');
+  setBtn.disabled = true;
+  setBtn.textContent = 'Aniqlanmoqda...';
+
+  if (!navigator.geolocation){
+    setBtn.textContent = 'Qurilma joylashuvni qo\'llab-quvvatlamaydi';
+    setBtn.disabled = false;
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude, longitude } = pos.coords;
+    const now = new Date().toLocaleString('uz-UZ');
+    const data = { lat: latitude, lng: longitude, savedAt: now };
+    try{
+      await setDoc(doc(db, "settings", "workplace-location"), data);
+      WORKPLACE = { lat: latitude, lng: longitude, name: "Ishxona" };
+      document.getElementById('adminCurrent').textContent =
+        `Joriy manzil: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (${now} da saqlangan)`;
+      setBtn.textContent = '✓ Saqlandi';
+      setTimeout(() => { setBtn.textContent = '📍 Hozirgi joylashuvni ishxona sifatida saqlash'; }, 2000);
+    }catch(e){
+      setBtn.textContent = 'Xatolik, qayta urinib ko\'ring';
+    }
+    setBtn.disabled = false;
+  }, (err) => {
+    setBtn.textContent = 'Joylashuvga ruxsat berilmadi';
+    setBtn.disabled = false;
+  }, { enableHighAccuracy: true, timeout: 15000 });
+});
+
+// ====== ISH VAQTLARINI SOZLASH (admin, 04:00 - 20:00 oralig'ida) ======
+const startHourSel = document.getElementById('startHour');
+const startMinuteSel = document.getElementById('startMinute');
+const endHourSel = document.getElementById('endHour');
+const endMinuteSel = document.getElementById('endMinute');
+const saveHoursBtn = document.getElementById('saveHoursBtn');
+
+function fillHourOptions(sel){
+  for (let h = 4; h <= 20; h++){
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = String(h).padStart(2,'0');
+    sel.appendChild(opt);
+  }
+}
+function fillMinuteOptions(sel){
+  [0,15,30,45].forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = String(m).padStart(2,'0');
+    sel.appendChild(opt);
+  });
+}
+[startHourSel, endHourSel].forEach(fillHourOptions);
+[startMinuteSel, endMinuteSel].forEach(fillMinuteOptions);
+
+function applyWorkHoursToSelects(){
+  startHourSel.value = WORK_START_HOUR;
+  startMinuteSel.value = WORK_START_MINUTE;
+  endHourSel.value = WORK_END_HOUR;
+  endMinuteSel.value = WORK_END_MINUTE;
+}
+applyWorkHoursToSelects();
+
+async function loadWorkHours(){
+  try{
+    const snap = await getDoc(doc(db, "settings", "work-hours"));
+    if (snap.exists()){
+      const d = snap.data();
+      WORK_START_HOUR = d.startHour;
+      WORK_START_MINUTE = d.startMinute;
+      WORK_END_HOUR = d.endHour;
+      WORK_END_MINUTE = d.endMinute;
+      applyWorkHoursToSelects();
+    }
+  }catch(e){
+    // saqlanmagan — standart qiymatlar ishlatiladi
+  }
+}
+
+saveHoursBtn.addEventListener('click', async () => {
+  saveHoursBtn.disabled = true;
+  saveHoursBtn.textContent = 'Saqlanmoqda...';
+  const data = {
+    startHour: parseInt(startHourSel.value, 10),
+    startMinute: parseInt(startMinuteSel.value, 10),
+    endHour: parseInt(endHourSel.value, 10),
+    endMinute: parseInt(endMinuteSel.value, 10)
+  };
+  try{
+    await setDoc(doc(db, "settings", "work-hours"), data);
+    WORK_START_HOUR = data.startHour;
+    WORK_START_MINUTE = data.startMinute;
+    WORK_END_HOUR = data.endHour;
+    WORK_END_MINUTE = data.endMinute;
+    saveHoursBtn.textContent = '✓ Saqlandi';
+  }catch(e){
+    saveHoursBtn.textContent = 'Xatolik, qayta urinib ko\'ring';
+  }
+  setTimeout(() => { saveHoursBtn.textContent = 'Vaqtlarni saqlash'; saveHoursBtn.disabled = false; }, 1500);
+});
+
+// ====== EXCEL HISOBOT ======
+const reportDateInput = document.getElementById('reportDate');
+const exportBtn = document.getElementById('exportBtn');
+reportDateInput.value = todayKey();
+
+exportBtn.addEventListener('click', async () => {
+  const dateVal = reportDateInput.value || todayKey();
+  exportBtn.disabled = true;
+  exportBtn.textContent = 'Tayyorlanmoqda...';
+
+  try{
+    const q = query(collection(db, "attendance"), where("date", "==", dateVal));
+    const snap = await getDocs(q);
+    const rows = [];
+    snap.forEach(d => rows.push(d.data()));
+    rows.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+    const sheetData = rows.map(r => ({
+      "Ism": r.name || '',
+      "Kod": r.code || '',
+      "Kelish vaqti": r.time || '',
+      "Kechikish (daqiqa)": r.late ? r.minutesLate : 0,
+      "Ketish vaqti": r.checkoutTime || '',
+      "Erta ketish (daqiqa)": r.earlyLeave ? r.minutesEarly : 0,
+      "Masofa (m)": r.distance != null ? r.distance : ''
+    }));
+
+    if (sheetData.length === 0){
+      sheetData.push({ "Ism": "Ma'lumot topilmadi", "Kod": '', "Kelish vaqti": '', "Kechikish (daqiqa)": '', "Ketish vaqti": '', "Erta ketish (daqiqa)": '', "Masofa (m)": '' });
+    }
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Davomat");
+    XLSX.writeFile(wb, `davomat_${dateVal}.xlsx`);
+
+    exportBtn.textContent = '✓ Yuklandi';
+  }catch(e){
+    exportBtn.textContent = 'Xatolik, qayta urinib ko\'ring';
+  }
+  setTimeout(() => { exportBtn.textContent = '📊 Excel hisobotni yuklab olish'; exportBtn.disabled = false; }, 1500);
+});
+
+loadWorkplaceLocation();
+loadWorkHours();
+loadTodayList();
+</script>
+
+</body>
+</html>
